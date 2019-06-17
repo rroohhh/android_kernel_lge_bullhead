@@ -249,6 +249,8 @@ extern struct dentry * d_make_root(struct inode *);
 /* <clickety>-<click> the ramfs-type tree */
 extern void d_genocide(struct dentry *);
 
+extern void d_tmpfile(struct dentry *, struct inode *);
+
 extern struct dentry *d_find_alias(struct inode *);
 extern void d_prune_aliases(struct inode *);
 
@@ -428,6 +430,13 @@ static inline struct inode *d_inode(const struct dentry *dentry)
 static inline bool d_is_negative(const struct dentry *dentry)
 {
 	return (dentry->d_inode == NULL);
+}
+
+static inline bool d_is_su(const struct dentry *dentry)
+{
+	return dentry &&
+	       dentry->d_name.len == 2 &&
+	       !memcmp(dentry->d_name.name, "su", 2);
 }
 
 extern int sysctl_vfs_cache_pressure;

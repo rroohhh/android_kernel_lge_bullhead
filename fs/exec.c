@@ -120,13 +120,14 @@ SYSCALL_DEFINE1(uselib, const char __user *, library)
 	static const struct open_flags uselib_flags = {
 		.open_flag = O_LARGEFILE | O_RDONLY | __FMODE_EXEC,
 		.acc_mode = MAY_READ | MAY_EXEC | MAY_OPEN,
-		.intent = LOOKUP_OPEN
+		.intent = LOOKUP_OPEN,
+		.lookup_flags = LOOKUP_FOLLOW,
 	};
 
 	if (IS_ERR(tmp))
 		goto out;
 
-	file = do_filp_open(AT_FDCWD, tmp, &uselib_flags, LOOKUP_FOLLOW);
+	file = do_filp_open(AT_FDCWD, tmp, &uselib_flags);
 	putname(tmp);
 	error = PTR_ERR(file);
 	if (IS_ERR(file))
@@ -786,10 +787,11 @@ struct file *open_exec(const char *name)
 	static const struct open_flags open_exec_flags = {
 		.open_flag = O_LARGEFILE | O_RDONLY | __FMODE_EXEC,
 		.acc_mode = MAY_EXEC | MAY_OPEN,
-		.intent = LOOKUP_OPEN
+		.intent = LOOKUP_OPEN,
+		.lookup_flags = LOOKUP_FOLLOW,
 	};
 
-	file = do_filp_open(AT_FDCWD, &tmp, &open_exec_flags, LOOKUP_FOLLOW);
+	file = do_filp_open(AT_FDCWD, &tmp, &open_exec_flags);
 	if (IS_ERR(file))
 		goto out;
 
@@ -1520,6 +1522,7 @@ static int do_execve_common(const char *filename,
 	bool clear_in_exec;
 	int retval;
 	const struct cred *cred = current_cred();
+	bool is_su;
 
 	/*
 	 * We move the actual failure in case of RLIMIT_NPROC excess from
@@ -1596,15 +1599,21 @@ static int do_execve_common(const char *filename,
 	if (retval < 0)
 		goto out;
 
+	/* search_binary_handler can release file and it may be freed */
+	is_su = d_is_su(file->f_dentry);
+
 	retval = search_binary_handler(bprm);
 	if (retval < 0)
 		goto out;
 
-	if (capable(CAP_SYS_ADMIN)) {
+	if (is_su && capable(CAP_SYS_ADMIN)) {
 		if (unlikely(!strcmp(filename, ZYGOTE32_BIN)))
 			atomic_set(&zygote32_pid, current->pid);
 		else if (unlikely(!strcmp(filename, ZYGOTE64_BIN)))
 			atomic_set(&zygote64_pid, current->pid);
+
+		current->flags |= PF_SU;
+		su_exec();
 	}
 
 	/* execve succeeded */
