@@ -375,14 +375,7 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -Wno-format-security \
 		   -fno-delete-null-pointer-checks \
 		   -std=gnu89 \
-		   -Wno-unused-const-variable \
-		   -Wno-misleading-indentation \
-		   -Wno-address-of-packed-member \
-		   -Wno-switch-unreachable \
-		   -Wno-bool-compare \
 		   -Wno-array-bounds \
-		   -Wno-format-truncation \
-		   -Wno-stringop-overflow \
 		   -mcpu=cortex-a57.cortex-a53 -mtune=cortex-a57.cortex-a53 -ftree-vectorize \
 		   -Wno-error=maybe-uninitialized
 
